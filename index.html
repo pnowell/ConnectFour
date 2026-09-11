@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connect Four AI - Powered by Deep Reinforcement Learning</title>
+    <meta name="description" content="Play Connect Four against a deep reinforcement learning ResNet model trained for 1M steps. Real-time Q-value analysis and multiple difficulty levels." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23ff385c'/></svg>" />
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.min.js"></script>
+    <script type="module" crossorigin src="./assets/index-CEzvNV7-.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CHGm-056.css">
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Top Navigation / Header -->
+      <header class="top-nav">
+        <div class="brand-group">
+          <h1 class="main-title">
+            Connect <span class="highlight-red">Four</span> <span class="highlight-yellow">AI</span>
+          </h1>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn btn-primary" id="btn-new-game" title="Start a fresh match">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            New Game
+          </button>
+
+          <button class="btn-icon gear-btn" id="btn-open-settings" title="Match Settings" aria-label="Settings">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Play Area -->
+      <main class="main-content">
+        <!-- Live Status Bar -->
+        <div class="status-bar" id="status-bar">
+          <!-- Active Match Info -->
+          <div class="status-bar-active" id="status-bar-active">
+            <div class="player-card active" id="player1-card">
+              <div class="player-token-indicator p1"></div>
+              <div>
+                <div class="player-name" id="p1-label">Player 1 (Red)</div>
+                <div class="player-sub" id="p1-type">Human (You)</div>
+              </div>
+            </div>
+
+            <div class="game-status-message" id="status-message">
+              <span>Your turn to move</span>
+            </div>
+
+            <div class="player-card" id="player2-card">
+              <div class="player-token-indicator p2"></div>
+              <div>
+                <div class="player-name" id="p2-label">Player 2 (Yellow)</div>
+                <div class="player-sub" id="p2-type">AI (Grandmaster)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Victory Replacement Banner (Replaces status bar to leave board unobstructed) -->
+          <div class="status-bar-victory" id="status-bar-victory" style="display: none;">
+            <div class="victory-info">
+              <div class="victory-indicator" id="victory-indicator"></div>
+              <div>
+                <div class="victory-title" id="victory-title">Red Connected 4!</div>
+                <div class="victory-sub" id="victory-sub">Four checkers connected in a row.</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-victory-play-again">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+              Play Again
+            </button>
+          </div>
+        </div>
+
+        <!-- Board Container with half-inserted ghost token -->
+        <div id="board-container"></div>
+
+        <!-- AI Evaluation / Heatmap Row -->
+        <div id="evaluation-container"></div>
+      </main>
+
+      <!-- Settings Modal Dialog -->
+      <div class="modal-backdrop" id="settings-modal-backdrop">
+        <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+          <div class="settings-modal-header">
+            <div class="settings-modal-title" id="settings-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Match Settings
+            </div>
+            <button class="btn-icon" id="btn-close-settings" aria-label="Close Settings">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Description along the top of settings container -->
+          <div class="settings-desc-banner">
+            Challenge a deep reinforcement learning model trained over 1,000,000 self-play steps with adversarial blindspot remediation.
+          </div>
+
+          <!-- Game Mode -->
+          <div class="section-group">
+            <label class="section-label">Opponent Mode</label>
+            <div class="segmented-control" id="mode-selector">
+              <button class="seg-btn active" data-mode="vs-ai">Vs AI</button>
+              <button class="seg-btn" data-mode="two-player">Pass & Play</button>
+              <button class="seg-btn" data-mode="ai-vs-ai">AI vs AI</button>
+            </div>
+          </div>
+
+          <!-- Human Seat Choice (Vs AI) -->
+          <div class="section-group" id="seat-selection-group">
+            <label class="section-label">Play As</label>
+            <div class="segmented-control" id="seat-selector">
+              <button class="seg-btn active" data-seat="1">
+                <span style="color: var(--p1-color)">⬤</span> Red (1st)
+              </button>
+              <button class="seg-btn" data-seat="2">
+                <span style="color: var(--p2-color)">⬤</span> Yellow (2nd)
+              </button>
+            </div>
+          </div>
+
+          <!-- Single AI Difficulty (Vs AI Mode) -->
+          <div class="section-group" id="vs-ai-difficulty-group">
+            <label class="section-label">AI Difficulty</label>
+            <div class="segmented-control" id="vs-ai-difficulty-selector">
+              <button class="seg-btn active" data-difficulty="grandmaster">Grandmaster</button>
+              <button class="seg-btn" data-difficulty="challenging">Challenging</button>
+              <button class="seg-btn" data-difficulty="casual">Casual</button>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;" id="vs-ai-difficulty-desc">
+              Near-optimal unexploitable play with slight variation (τ = 0.02)
+            </div>
+          </div>
+
+          <!-- Dual AI Difficulty: Red AI (AI vs AI Mode) -->
+          <div class="section-group" id="ai-vs-ai-red-difficulty-group" style="display: none;">
+            <label class="section-label" style="color: var(--p1-color)">Red AI (1st) Difficulty</label>
+            <div class="segmented-control" id="red-difficulty-selector">
+              <button class="seg-btn active" data-difficulty="grandmaster">Grandmaster</button>
+              <button class="seg-btn" data-difficulty="challenging">Challenging</button>
+              <button class="seg-btn" data-difficulty="casual">Casual</button>
+            </div>
+          </div>
+
+          <!-- Dual AI Difficulty: Yellow AI (AI vs AI Mode) -->
+          <div class="section-group" id="ai-vs-ai-yellow-difficulty-group" style="display: none;">
+            <label class="section-label" style="color: var(--p2-color)">Yellow AI (2nd) Difficulty</label>
+            <div class="segmented-control" id="yellow-difficulty-selector">
+              <button class="seg-btn active" data-difficulty="grandmaster">Grandmaster</button>
+              <button class="seg-btn" data-difficulty="challenging">Challenging</button>
+              <button class="seg-btn" data-difficulty="casual">Casual</button>
+            </div>
+          </div>
+
+          <!-- AI Live Evaluation Overlay Toggle (Off by default) -->
+          <div class="toggle-row" id="toggle-eval-row">
+            <div>
+              <div style="font-weight: 600; font-size: 0.9rem;">Show AI Advice & Q-Values</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Real-time model evaluations beneath columns</div>
+            </div>
+            <div class="toggle-switch" id="toggle-eval-switch">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+
+          <!-- Model Telemetry Box -->
+          <div class="telemetry-card">
+            <div class="telemetry-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+              Model Specification
+            </div>
+            <div class="telemetry-stat">
+              <span>Architecture</span>
+              <span class="telemetry-val">ResNet + Dueling Q</span>
+            </div>
+            <div class="telemetry-stat">
+              <span>Training Steps</span>
+              <span class="telemetry-val">1,000,000</span>
+            </div>
+            <div class="telemetry-stat">
+              <span>Benchmark Accuracy</span>
+              <span class="telemetry-val">94.50%</span>
+            </div>
+            <div class="telemetry-stat">
+              <span>Inference Engine</span>
+              <span class="telemetry-val">ONNX Runtime Web</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="btn-done-settings" style="width: 100%; margin-top: 4px;">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
